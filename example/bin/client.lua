@@ -6,9 +6,18 @@ logw = summer.logw
 logi = summer.logi
 loge = summer.loge
 
+
+
+
+
+
+
+
+
+
 --echo pack
 
-local echo = {  _iarray = {{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="12345678",_ui64="12345678"},{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="12345678",_ui64="12345678"}},
+local echo = {  _iarray = {{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64=12345678,_ui64=12345678.2},{_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="1234567812213123.2",_ui64="123"}},
                 _farray = {{_float=2.235,_double=235.111},{_float=2.235,_double=235.111},},
                 _sarray = {{_string="abcdefg"},{_string="abcdefg"},{_string="abcdefg"}},
                 _imap = {{k="123", v={_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="12345678",_ui64="12345678"}}, {k="223", v={_char=1,_uchar=2,_short=3,_ushort=4,_int=5,_uint=6,_i64="12345678",_ui64="12345678"}}},
@@ -68,11 +77,12 @@ if id == nil then
 end
 print("new connect id=" .. id)
 
+local startTick = summer.now()
 --进入循环
 --summer.run()
 --如果嵌入其他程序 例如cocos2dx, 可以吧runOnce设置true然后放入update中.
 --while summer.runOnce(true) do
-while summer.runOnce() do
+while summer.runOnce() and summer.now() - startTick < 10*1000 do
 end
 
 

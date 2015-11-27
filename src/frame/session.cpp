@@ -220,7 +220,15 @@ void TcpSession::onRecv(zsummer::network::NetErrorCode ec, int received)
 {
     if (ec)
     {
-        LCD("socket closed. ec=" << ec);
+        _lastRecvError = ec;
+        if (_lastRecvError == NEC_REMOTE_CLOSED)
+        {
+            LCI("socket closed. remote shutdown. sID=" << _sessionID);
+        }
+        else
+        {
+            LCI("socket closed. local shutdown. sID=" << _sessionID);
+        }
         close();
         return;
     }
@@ -383,6 +391,12 @@ void TcpSession::send(const char *buf, unsigned int len)
     //push to send queue
     if (!_sendque.empty() || _status != 2 || _sending->len != 0)
     {
+        if (_sendque.size() >= _options._maxSendListCount)
+        {
+            close();
+            return;
+        }
+        
         SessionBlock * sb = _options._createBlock();
         if (sb->bound < len)
         {
@@ -517,24 +531,67 @@ void TcpSession::onPulse()
 }
 
 
-Any TcpSession::setUserParam(size_t index, const Any &any)
+void TcpSession::setUserParam(size_t index, const TupleParam &tp)
 {
+    if (index > 100)
+    {
+        LOGE("TcpSession::setUserParam. too many user param. index=" << index);
+    }
+    
     if (_param.size() <= index)
     {
         for (size_t i = _param.size(); i < index + 1; i++)
         {
-            _param.push_back(Any());
+            _param.push_back(std::make_tuple(0.0, 0, ""));
         }
     }
-    _param[index] = any;
-    return any;
+    _param[index] = tp;
 }
-Any TcpSession::getUserParam(size_t index)
+
+TupleParam TcpSession::getUserParam(size_t index)
 {
+    if (index > 100)
+    {
+        LOGE("TcpSession::getUserParam. too many user param. index=" << index);
+    }
     if (index >= _param.size())
     {
-        return Any();
+        return std::make_tuple(0.0, 0, "");
     }
     return _param[index];
 }
+
+double TcpSession::getUserParamDouble(size_t index)
+{
+    return std::get<TupleParamDouble>(getUserParam(index));
+}
+
+unsigned long long TcpSession::getUserParamNumber(size_t index)
+{
+    return std::get<TupleParamNumber>(getUserParam(index));
+}
+
+std::string TcpSession::getUserParamString(size_t index)
+{
+    return std::get<TupleParamString>(getUserParam(index));
+}
+
+void TcpSession::setUserParamDouble(size_t index, double d)
+{
+    auto tp = getUserParam(index);
+    setUserParam(index, std::make_tuple(d, std::get<TupleParamNumber>(tp), std::get<TupleParamString>(tp)));
+}
+
+void TcpSession::setUserParam(size_t index, unsigned long long ull)
+{
+    auto tp = getUserParam(index);
+    setUserParam(index, std::make_tuple(std::get<TupleParamDouble>(tp), ull, std::get<TupleParamString>(tp)));
+}
+
+void TcpSession::setUserParam(size_t index, const std::string & str)
+{
+    auto tp = getUserParam(index);
+    setUserParam(index, std::make_tuple(std::get<TupleParamDouble>(tp), std::get<TupleParamNumber>(tp), str));
+}
+
 

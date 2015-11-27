@@ -88,7 +88,7 @@ namespace zsummer
         inline unsigned int nextConnectID(unsigned int curSessionID){ return (curSessionID + 1 < __MIDDLE_SEGMENT_VALUE || curSessionID + 1 == InvalidSessionID) ? __MIDDLE_SEGMENT_VALUE : curSessionID + 1; }
 
 
-        const unsigned int SESSION_BLOCK_SIZE = 10 * 1024;
+        const unsigned int SESSION_BLOCK_SIZE = 200 * 1024;
 
         enum ProtoType
         {
@@ -122,6 +122,22 @@ namespace zsummer
             
             STAT_SIZE,
         };
+        const char * const StatTypeDesc[] = { 
+            "STAT_STARTTIME",
+            "STAT_SESSION_CREATED",
+            "STAT_SESSION_DESTROYED",
+            "STAT_SESSION_LINKED",
+            "STAT_SESSION_CLOSED",
+            "STAT_FREE_BLOCKS",
+            "STAT_EXIST_BLOCKS",
+            "STAT_SEND_COUNT",
+            "STAT_SEND_PACKS",
+            "STAT_SEND_BYTES",
+            "STAT_SEND_QUES",
+            "STAT_RECV_COUNT",
+            "STAT_RECV_PACKS",
+            "STAT_RECV_BYTES",
+            "STAT_SIZE", };
 
         class TcpSession;
         using TcpSessionPtr = std::shared_ptr<TcpSession>;
@@ -177,7 +193,7 @@ namespace zsummer
             unsigned int    _connectPulseInterval = 5000;  
             unsigned int    _reconnects = 0; // can reconnect count 
             bool            _reconnectClean = true;//clean unsend block . 
-
+            unsigned int    _maxSendListCount = 600;
             OnBlockCheck _onBlockCheck;
             OnBlockDispatch _onBlockDispatch;
             OnHTTPBlockCheck _onHTTPBlockCheck;
@@ -204,46 +220,14 @@ namespace zsummer
             SessionOptions _sessionOptions;
         };
 
+        using TupleParam = std::tuple<double, unsigned long long, std::string>;
 
-        class Any
+        enum TupleParamType
         {
-        public:
-            Any(){}
-            Any(unsigned long long n) :_number(n){}
-            Any(const std::string & str) :_string(str){}
-            Any(void * p) :_pointer(p){}
-            explicit Any(double df) :_float(df){}
-            Any(unsigned long long n, double df, std::string str, void*p) :_number(n), _float(df), _string(str), _pointer(p){}
-        public:
-            inline unsigned long long getNumber() const { return _number; }
-            inline double getFloat() const { return _float; }
-            inline std::string getString() const { return _string; }
-            inline void * getPtr() const { return _pointer; }
-        private:
-            unsigned long long _number = 0;
-            double _float = 0.0;
-            std::string _string;
-            void * _pointer = nullptr;
+            TupleParamDouble = 0,
+            TupleParamNumber = 1,
+            TupleParamString = 2,
         };
-
-
-        template<class Number>
-        Number numberCast(const Any & any)
-        {
-            return (Number)any.getNumber();
-        }
-
-        inline std::string  stringCast(const Any & any)
-        {
-            return any.getString();
-        }
-        template<class Pointer>
-        Pointer * pointerCast(const Any & any)
-        {
-            return (Pointer *)any.getPtr();
-        }
-
-
 
         inline zsummer::log4z::Log4zStream & operator << (zsummer::log4z::Log4zStream &os, const SessionOptions & traits)
         {

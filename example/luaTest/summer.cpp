@@ -35,11 +35,10 @@
  */
 
 #include "summer.h"
-
 #include <zsummerX/zsummerX.h>
+#include <chrono>
 using namespace zsummer::proto4z;
 using namespace zsummer::network;
-
 
 
 
@@ -223,7 +222,7 @@ static int stop(lua_State *L)
 static int runOnce(lua_State * L)
 {
     int isImmediately = lua_toboolean(L, 1);
-    bool ret = SessionManager::getRef().runOnce((bool)isImmediately);
+    bool ret = SessionManager::getRef().runOnce(isImmediately != 0);
     lua_pushboolean(L, (int)ret);
     return 1;
 }
@@ -403,6 +402,27 @@ static int _post(lua_State * L)
     return 0;
 }
 
+static int _status(lua_State * L)
+{
+    lua_newtable(L);
+    for (int i = STAT_STARTTIME; i < STAT_SIZE; i++)
+    {
+        std::stringstream os;
+        os << SessionManager::getRef()._statInfo[i];
+        lua_pushstring(L, os.str().c_str());
+        lua_setfield(L, -2, StatTypeDesc[i]);
+    }
+    return 1;
+}
+
+static int _steadyTime(lua_State * L)
+{
+    unsigned int now = (unsigned int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    lua_pushinteger(L, now);
+    return 1;
+}
+
+
 static luaL_Reg summer[] = {
     { "logd", logd },
     { "logi", logi },
@@ -426,6 +446,8 @@ static luaL_Reg summer[] = {
     { "sendData", sendData }, // send original data, need to serialize and package via proto4z. 
     { "kick", kick }, // kick session. 
     { "post", _post }, // kick session. 
+    { "status", _status }, // get session status. 
+    { "now", _steadyTime }, // get now tick. 
 
     { NULL, NULL }
 };
@@ -441,6 +463,7 @@ int luaopen_summer(lua_State *L)
     lua_setglobal(L, "summer");
     return 0;
 }
+
 
 
 

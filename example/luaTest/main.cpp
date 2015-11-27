@@ -41,13 +41,13 @@ extern "C"
 int luaopen_proto4z_util(lua_State *L);
 }
 
-
+#include "performance.h"
 
 
 #include <zsummerX/zsummerX.h>
 using namespace zsummer::log4z;
 using namespace zsummer::network;
-
+#include <fstream>
 void sigFun(int sig)
 {
     SessionManager::getRef().stopAccept();
@@ -78,7 +78,12 @@ int safedofile(lua_State * L, const char * file)
     int status = luaL_loadfile(L, file) || lua_pcall(L, 0, 0, index + 1);
     lua_remove(L, index + 1);
     return status;
+
 }
+
+
+
+
 
 int main(int argc, char* argv[])
 {
@@ -110,9 +115,10 @@ int main(int argc, char* argv[])
     luaL_openlibs(L);  /* open libraries */
     luaopen_summer(L);
     luaopen_proto4z_util(L);
-
-
     lua_gc(L, LUA_GCRESTART, 0);
+
+    luaopen_performence(L);
+    
 
     if (argc > 1)
     {
